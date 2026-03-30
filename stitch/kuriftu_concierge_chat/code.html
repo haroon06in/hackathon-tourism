@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif:ital,wght@0,400;0,700;1,400&amp;family=Manrope:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "on-primary-fixed-variant": "#2f4d39",
+              "surface-variant": "#e5e2dd",
+              "secondary-fixed": "#ffdcbf",
+              "surface-container-high": "#ebe8e3",
+              "surface-bright": "#fcf9f4",
+              "on-secondary-fixed-variant": "#633f19",
+              "secondary-container": "#fdc796",
+              "secondary": "#7e562e",
+              "on-primary-fixed": "#022110",
+              "tertiary": "#00324a",
+              "error-container": "#ffdad6",
+              "on-tertiary-fixed": "#001e2f",
+              "primary-fixed-dim": "#adcfb4",
+              "on-tertiary": "#ffffff",
+              "secondary-fixed-dim": "#f1bc8c",
+              "on-surface": "#1c1c19",
+              "on-error": "#ffffff",
+              "outline": "#727972",
+              "on-surface-variant": "#424843",
+              "tertiary-fixed": "#c9e6ff",
+              "surface-container-low": "#f6f3ee",
+              "error": "#ba1a1a",
+              "surface": "#fcf9f4",
+              "on-primary-container": "#99baa1",
+              "surface-container-lowest": "#ffffff",
+              "surface-tint": "#466550",
+              "on-secondary-fixed": "#2d1600",
+              "tertiary-container": "#204861",
+              "primary-fixed": "#c8ebd0",
+              "primary": "#163422",
+              "on-error-container": "#93000a",
+              "inverse-surface": "#31302d",
+              "background": "#fcf9f4",
+              "surface-container-highest": "#e5e2dd",
+              "tertiary-fixed-dim": "#a5cbea",
+              "surface-container": "#f0ede8",
+              "on-tertiary-fixed-variant": "#224b64",
+              "on-background": "#1c1c19",
+              "outline-variant": "#c2c8c0",
+              "inverse-on-surface": "#f3f0eb",
+              "on-secondary-container": "#79512a",
+              "inverse-primary": "#adcfb4",
+              "on-secondary": "#ffffff",
+              "on-tertiary-container": "#90b6d4",
+              "on-primary": "#ffffff",
+              "surface-dim": "#dcdad5",
+              "primary-container": "#2d4b37"
+            },
+            fontFamily: {
+              "headline": ["Noto Serif"],
+              "body": ["Manrope"],
+              "label": ["Manrope"]
+            },
+            borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            vertical-align: middle;
+        }
+        .hide-scrollbar::-webkit-scrollbar { display: none; }
+        .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    </style>
+</head>
+<body class="bg-surface text-on-surface font-body selection:bg-secondary-container selection:text-on-secondary-container">
+<!-- Top Navigation Anchor -->
+<header class="bg-white/70 dark:bg-stone-900/70 backdrop-blur-md fixed top-0 w-full z-50">
+<div class="flex justify-between items-center w-full px-8 py-4 max-w-8xl mx-auto">
+<div class="text-2xl font-headline tracking-tight text-emerald-950 dark:text-emerald-50">Kuriftu Resorts</div>
+<nav class="hidden md:flex items-center gap-8">
+<a class="text-stone-600 dark:text-stone-400 font-medium hover:text-emerald-800 transition-colors duration-300" href="#">Hotels</a>
+<a class="text-emerald-900 dark:text-emerald-400 font-bold border-b-2 border-emerald-800/30 transition-colors duration-300" href="#">Concierge</a>
+<a class="text-stone-600 dark:text-stone-400 font-medium hover:text-emerald-800 transition-colors duration-300" href="#">Activities</a>
+</nav>
+<button class="bg-primary text-on-primary px-6 py-2 rounded-lg font-medium hover:bg-primary-container transition-all active:scale-95">Book Stay</button>
+</div>
+</header>
+<main class="pt-24 min-h-screen flex flex-col md:flex-row max-w-7xl mx-auto px-4 gap-8">
+<!-- Left Column: Sidebar / Profile Info -->
+<aside class="w-full md:w-80 flex flex-col gap-6">
+<div class="bg-surface-container-low rounded-xl p-6 overflow-hidden relative">
+<div class="relative z-10">
+<h2 class="font-headline text-2xl text-primary mb-2">Personal Concierge</h2>
+<p class="text-sm text-on-surface-variant leading-relaxed">Your dedicated assistant at Kuriftu Resorts is available 24/7 to curate your Lakeside Living experience.</p>
+</div>
+<div class="absolute -bottom-4 -right-4 opacity-10">
+<span class="material-symbols-outlined text-8xl" data-icon="support_agent">support_agent</span>
+</div>
+</div>
+<div class="bg-surface-container rounded-xl p-6 space-y-6">
+<h3 class="font-headline text-lg text-secondary">Quick Actions</h3>
+<div class="flex flex-col gap-3">
+<!-- Call States Illustration -->
+<button class="flex items-center gap-3 w-full p-4 rounded-lg bg-primary text-on-primary transition-all hover:bg-primary-container">
+<span class="material-symbols-outlined" data-icon="call">call</span>
+<span class="font-medium">Call Front Desk</span>
+</button>
+<button class="flex items-center gap-3 w-full p-4 rounded-lg bg-secondary-container text-on-secondary-container opacity-50 cursor-not-allowed">
+<span class="material-symbols-outlined animate-pulse" data-icon="ring_volume">ring_volume</span>
+<span class="font-medium">Calling...</span>
+</button>
+<button class="flex items-center gap-3 w-full p-4 rounded-lg border border-error/20 text-error">
+<span class="material-symbols-outlined" data-icon="call_end">call_end</span>
+<span class="font-medium">Call Ended</span>
+</button>
+</div>
+</div>
+<div class="rounded-xl overflow-hidden aspect-video relative group cursor-pointer">
+<img alt="Spa therapy" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" data-alt="luxury spa interior with warm ambient lighting wooden textures and plush towels for a tranquil wellness atmosphere" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDwVlmhTL2HrwLMnCDQtMTKR3Zl7X5ewzBUw03lgRT7yANPnN-4f-oR087OeSuqHZz85fp9HhQNgjBt0Hv2ach3dt4rQl7vzDzc9f-vbM0NLTC9IWxw1sM2AxiZW6KpdLgIIUIvAYjz67Bn4jM6WPnIAQjYQmtG3cEsWnfjWaRsxmjyd85ptUYn_aNktgu1cq5I5S47JR-UNF6_d8ksT4GVbxG0jrvRN9qfFAf1YieKxX0zt6vz9KIT8HF7FEIYeH68xgvOsvsZ8A"/>
+<div class="absolute inset-0 bg-gradient-to-t from-primary/80 to-transparent flex items-end p-4">
+<p class="text-on-primary font-headline italic">Explore our Wellness Spa</p>
+</div>
+</div>
+</aside>
+<!-- Right Column: Chat Interface -->
+<section class="flex-1 flex flex-col bg-surface-container-lowest rounded-xl shadow-sm border border-outline-variant/10 overflow-hidden min-h-[700px]">
+<!-- Chat Header -->
+<div class="bg-surface-container-high px-8 py-6 flex items-center justify-between">
+<div class="flex items-center gap-4">
+<div class="w-12 h-12 rounded-full bg-primary-fixed-dim flex items-center justify-center text-primary">
+<span class="material-symbols-outlined" data-icon="spa" data-weight="fill" style="font-variation-settings: 'FILL' 1;">spa</span>
+</div>
+<div>
+<h1 class="font-headline text-xl text-on-surface">Concierge Services</h1>
+<p class="text-xs text-on-surface-variant flex items-center gap-1">
+<span class="w-2 h-2 rounded-full bg-emerald-500"></span> Online &amp; Ready
+                        </p>
+</div>
+</div>
+<div class="flex gap-2">
+<button class="p-2 rounded-full hover:bg-surface-variant text-on-surface-variant">
+<span class="material-symbols-outlined" data-icon="search">search</span>
+</button>
+<button class="p-2 rounded-full hover:bg-surface-variant text-on-surface-variant">
+<span class="material-symbols-outlined" data-icon="more_vert">more_vert</span>
+</button>
+</div>
+</div>
+<!-- Message List -->
+<div class="flex-1 overflow-y-auto p-8 space-y-8 hide-scrollbar">
+<!-- System Message -->
+<div class="flex justify-center">
+<span class="bg-surface-container text-on-surface-variant text-[10px] px-3 py-1 rounded-full uppercase tracking-widest font-bold">Today</span>
+</div>
+<!-- Hotel Message -->
+<div class="flex items-start gap-4 max-w-[80%]">
+<div class="w-8 h-8 rounded-full bg-surface-container flex-shrink-0 flex items-center justify-center">
+<span class="material-symbols-outlined text-sm text-primary" data-icon="concierge">concierge</span>
+</div>
+<div class="bg-surface-container-low p-4 rounded-xl rounded-tl-none">
+<p class="text-on-surface text-sm leading-relaxed">Welcome to Kuriftu Resorts. How may we assist you today?</p>
+<span class="text-[10px] text-on-surface-variant mt-2 block">09:00 AM</span>
+</div>
+</div>
+<!-- User Message -->
+<div class="flex items-start gap-4 flex-row-reverse ml-auto max-w-[80%]">
+<div class="w-8 h-8 rounded-full bg-secondary-fixed flex-shrink-0 flex items-center justify-center">
+<span class="material-symbols-outlined text-sm text-on-secondary-fixed" data-icon="person">person</span>
+</div>
+<div class="bg-primary text-on-primary p-4 rounded-xl rounded-tr-none">
+<p class="text-sm leading-relaxed">Can I get extra towels?</p>
+<span class="text-[10px] opacity-70 mt-2 block text-right">09:12 AM</span>
+</div>
+</div>
+<!-- Hotel Message -->
+<div class="flex items-start gap-4 max-w-[80%]">
+<div class="w-8 h-8 rounded-full bg-surface-container flex-shrink-0 flex items-center justify-center">
+<span class="material-symbols-outlined text-sm text-primary" data-icon="concierge">concierge</span>
+</div>
+<div class="bg-surface-container-low p-4 rounded-xl rounded-tl-none">
+<p class="text-on-surface text-sm leading-relaxed">Certainly, towels will be delivered shortly. Would you like them extra fluffy or standard?</p>
+<span class="text-[10px] text-on-surface-variant mt-2 block">09:13 AM</span>
+</div>
+</div>
+<!-- User Message -->
+<div class="flex items-start gap-4 flex-row-reverse ml-auto max-w-[80%]">
+<div class="w-8 h-8 rounded-full bg-secondary-fixed flex-shrink-0 flex items-center justify-center">
+<span class="material-symbols-outlined text-sm text-on-secondary-fixed" data-icon="person">person</span>
+</div>
+<div class="bg-primary text-on-primary p-4 rounded-xl rounded-tr-none">
+<p class="text-sm leading-relaxed">Book a spa session for 2</p>
+<span class="text-[10px] opacity-70 mt-2 block text-right">10:05 AM</span>
+</div>
+</div>
+<!-- Hotel Message -->
+<div class="flex items-start gap-4 max-w-[80%]">
+<div class="w-8 h-8 rounded-full bg-surface-container flex-shrink-0 flex items-center justify-center">
+<span class="material-symbols-outlined text-sm text-primary" data-icon="concierge">concierge</span>
+</div>
+<div class="bg-surface-container-low p-4 rounded-xl rounded-tl-none">
+<p class="text-on-surface text-sm leading-relaxed">Spa booking confirmed for 4:00 PM. We have reserved our Lakeside Couple's Suite for you.</p>
+<div class="mt-3 bg-white p-3 rounded-lg flex items-center gap-3 border border-outline-variant/20">
+<span class="material-symbols-outlined text-secondary" data-icon="event_available">event_available</span>
+<div>
+<p class="text-[10px] font-bold uppercase text-on-surface-variant">Confirmed Appointment</p>
+<p class="text-xs font-semibold">Today, 4:00 PM • Spa Center</p>
+</div>
+</div>
+<span class="text-[10px] text-on-surface-variant mt-2 block">10:07 AM</span>
+</div>
+</div>
+</div>
+<!-- Chat Input Area -->
+<div class="p-6 bg-surface-container-lowest border-t border-outline-variant/10">
+<div class="bg-surface-container-high rounded-xl p-2 flex items-center gap-2">
+<button class="p-2 text-on-surface-variant hover:text-primary transition-colors">
+<span class="material-symbols-outlined" data-icon="add_circle">add_circle</span>
+</button>
+<input class="flex-1 bg-transparent border-none focus:ring-0 text-sm py-2 px-1" placeholder="Tell us how we can help..." type="text"/>
+<button class="p-2 text-on-surface-variant hover:text-primary transition-colors">
+<span class="material-symbols-outlined" data-icon="mood">mood</span>
+</button>
+<button class="bg-primary text-on-primary p-2 rounded-lg flex items-center justify-center transition-all hover:scale-105 active:scale-95 shadow-lg shadow-primary/20">
+<span class="material-symbols-outlined" data-icon="send">send</span>
+</button>
+</div>
+<div class="mt-4 flex gap-2 overflow-x-auto hide-scrollbar pb-2">
+<button class="whitespace-nowrap bg-surface-container px-4 py-2 rounded-full text-xs font-medium hover:bg-secondary-container transition-colors">Order Coffee</button>
+<button class="whitespace-nowrap bg-surface-container px-4 py-2 rounded-full text-xs font-medium hover:bg-secondary-container transition-colors">Valet Request</button>
+<button class="whitespace-nowrap bg-surface-container px-4 py-2 rounded-full text-xs font-medium hover:bg-secondary-container transition-colors">Dinner Reservation</button>
+<button class="whitespace-nowrap bg-surface-container px-4 py-2 rounded-full text-xs font-medium hover:bg-secondary-container transition-colors">Late Check-out</button>
+</div>
+</div>
+</section>
+</main>
+<!-- Footer Anchor -->
+<footer class="bg-stone-50 dark:bg-stone-950 full-width relative mt-20">
+<div class="flex flex-col md:flex-row justify-between items-center w-full px-12 py-16 gap-8 max-w-8xl mx-auto">
+<div class="font-serif text-lg text-stone-900 dark:text-stone-100">Kuriftu Resorts &amp; Spa</div>
+<div class="flex gap-8 text-stone-500 dark:text-stone-400 font-sans Manrope text-sm tracking-wide">
+<a class="hover:text-emerald-900 dark:hover:text-emerald-200 transition-all" href="#">Our Story</a>
+<a class="hover:text-emerald-900 dark:hover:text-emerald-200 transition-all" href="#">Sustainability</a>
+<a class="hover:text-emerald-900 dark:hover:text-emerald-200 transition-all underline decoration-1 text-emerald-800" href="#">Wellness</a>
+<a class="hover:text-emerald-900 dark:hover:text-emerald-200 transition-all" href="#">Contact</a>
+<a class="hover:text-emerald-900 dark:hover:text-emerald-200 transition-all" href="#">Press</a>
+</div>
+<div class="text-stone-500 dark:text-stone-400 font-sans text-sm">© 2024 Kuriftu Resorts &amp; Spa. The Lakeside Curated Living.</div>
+</div>
+</footer>
+</body></html>
