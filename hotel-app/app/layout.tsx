@@ -3,6 +3,7 @@ import { Manrope, Noto_Serif } from "next/font/google";
 import "./globals.css";
 import Link from 'next/link';
 import { cn } from "../lib/utils";
+import Providers from "../components/Providers";
 
 const manrope = Manrope({ 
   subsets: ["latin"],
@@ -64,9 +65,11 @@ export default function RootLayout({
           </Link>
         </nav>
 
-        <main className="flex-grow w-full">
-          {children}
-        </main>
+        <Providers>
+          <main className="flex-grow w-full">
+            {children}
+          </main>
+        </Providers>
         
         {/* Footer */}
         <footer className="bg-stone-50 dark:bg-stone-950 w-full relative mt-auto border-t border-outline-variant/20">
