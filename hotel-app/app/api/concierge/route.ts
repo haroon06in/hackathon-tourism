@@ -71,7 +71,7 @@ export async function POST(request: Request) {
 
     const model = genAI.getGenerativeModel({
       model: 'gemini-2.0-flash',
-      systemInstruction: { parts: [{ text: fullSystemPrompt }] },
+      systemInstruction: { role: 'user' as const, parts: [{ text: fullSystemPrompt }] },
     });
 
     const history = (body.history || []).map((msg) => ({
