@@ -1,37 +1,29 @@
 "use client";
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { Hotel, RoomType } from '../../../types/hotel';
 import { api } from '../../../lib/api';
 import { RoomCard } from '../../../components/hotel/RoomCard';
 import { PreferencesForm } from '../../../components/hotel/PreferencesForm';
-import { Loader2, CheckCircle2 } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 
 export default function HotelsPage() {
-  const [hotels, setHotels] = useState<Hotel[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  
+  const { data: hotels = [], isLoading: loading, error: queryError } = useQuery({
+    queryKey: ['hotels'],
+    queryFn: api.getHotels,
+  });
+
+  const error = queryError ? 'Failed to load locations. Please try again later.' : null;
+
   const [selectedHotel, setSelectedHotel] = useState<Hotel | null>(null);
   const [selectedRoom, setSelectedRoom] = useState<RoomType | null>(null);
   const [bookingSuccess, setBookingSuccess] = useState(false);
 
-  useEffect(() => {
-    const fetchHotels = async () => {
-      try {
-        const data = await api.getHotels();
-        setHotels(data);
-        if (data.length > 0) {
-          setSelectedHotel(data[0]);
-        }
-      } catch (err) {
-        setError('Failed to load locations. Please try again later.');
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchHotels();
-  }, []);
+  // Auto-select first hotel once data loads
+  if (hotels.length > 0 && !selectedHotel) {
+    setSelectedHotel(hotels[0]);
+  }
 
   const handleBookRoom = (room: RoomType) => {
     setSelectedRoom(room);
