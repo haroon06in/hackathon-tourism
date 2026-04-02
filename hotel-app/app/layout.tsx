@@ -50,17 +50,23 @@ export default function RootLayout({
             >
               Concierge
             </Link>
-            <Link 
-              href="/activities" 
+            <Link
+              href="/activities"
               className="text-stone-600 dark:text-stone-400 font-medium hover:text-emerald-800 dark:hover:text-emerald-300 transition-colors duration-300"
             >
               Activities
             </Link>
+            <Link
+              href="/dashboard"
+              className="text-stone-600 dark:text-stone-400 font-medium hover:text-emerald-800 dark:hover:text-emerald-300 transition-colors duration-300"
+            >
+              Dashboard
+            </Link>
           </div>
-          
-          <Link href="/hotels">
+
+          <Link href="/dashboard">
             <button className="bg-primary text-on-primary px-6 py-2.5 rounded-lg font-medium hover:bg-primary-container transition-all active:opacity-80 active:scale-95">
-              Book Stay
+              My Stay
             </button>
           </Link>
         </nav>
