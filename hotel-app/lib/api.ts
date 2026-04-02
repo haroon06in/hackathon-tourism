@@ -27,9 +27,13 @@ export const api = {
   },
 
   submitActivityBooking: async (data: ActivityBookingRequest): Promise<BookingResponse> => {
-    // Reusing the general booking route but would typically have a specific route
-    // Here we just mock success
-    return { success: true, message: 'Activity booked successfully.', bookingId: Math.random().toString(36).substr(2, 9) };
+    const res = await fetch('/api/activities', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    });
+    if (!res.ok) throw new Error('Failed to book activity');
+    return res.json();
   },
 
   sendMessage: async (data: SendMessageRequest): Promise<ChatMessage> => {
