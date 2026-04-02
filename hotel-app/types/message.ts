@@ -7,4 +7,11 @@ export interface ChatMessage {
 
 export interface SendMessageRequest {
   text: string;
+  history?: ChatMessage[];
+  guestProfile?: {
+    name?: string;
+    persona?: string;
+    preferences?: Record<string, unknown>;
+  };
+  locationSlug?: string;
 }
