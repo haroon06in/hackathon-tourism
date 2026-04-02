@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { Activity } from '../../../types/activity';
 import { api } from '../../../lib/api';
 import { ActivityCard } from '../../../components/activities/ActivityCard';
@@ -9,26 +10,15 @@ import { Loader2 } from 'lucide-react';
 import Image from 'next/image';
 
 export default function ActivitiesPage() {
-  const [activities, setActivities] = useState<Activity[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  
+  const { data: activities = [], isLoading: loading, error: queryError } = useQuery({
+    queryKey: ['activities'],
+    queryFn: api.getActivities,
+  });
+
+  const error = queryError ? 'Failed to load experiences. Please try again later.' : null;
+
   const [selectedActivity, setSelectedActivity] = useState<Activity | null>(null);
   const [bookingSuccess, setBookingSuccess] = useState(false);
-
-  useEffect(() => {
-    const fetchActivities = async () => {
-      try {
-        const data = await api.getActivities();
-        setActivities(data);
-      } catch (err) {
-        setError('Failed to load experiences. Please try again later.');
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchActivities();
-  }, []);
 
   const handleBookClick = (activity: Activity) => {
     setSelectedActivity(activity);
