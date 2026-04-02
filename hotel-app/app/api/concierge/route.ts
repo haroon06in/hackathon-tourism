@@ -69,17 +69,17 @@ export async function POST(request: Request) {
 
     const fullSystemPrompt = SYSTEM_PROMPT + guestContext + locationContext;
 
-    const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
+    const model = genAI.getGenerativeModel({
+      model: 'gemini-2.0-flash',
+      systemInstruction: { parts: [{ text: fullSystemPrompt }] },
+    });
 
     const history = (body.history || []).map((msg) => ({
       role: msg.sender === 'user' ? 'user' as const : 'model' as const,
       parts: [{ text: msg.text }],
     }));
 
-    const chat = model.startChat({
-      history,
-      systemInstruction: fullSystemPrompt,
-    });
+    const chat = model.startChat({ history });
 
     const result = await chat.sendMessage(body.text);
     const responseText = result.response.text();
