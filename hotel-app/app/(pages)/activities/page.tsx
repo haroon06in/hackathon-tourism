@@ -1,15 +1,23 @@
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
+import { useRouter } from 'next/navigation';
 import { Activity } from '../../../types/activity';
 import { api } from '../../../lib/api';
 import { ActivityCard } from '../../../components/activities/ActivityCard';
 import { BookingForm } from '../../../components/activities/BookingForm';
 import { Loader2 } from 'lucide-react';
 import Image from 'next/image';
+import { useGuest } from '../../../contexts/GuestContext';
 
 export default function ActivitiesPage() {
+  const { guest, isLoading: guestLoading } = useGuest();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (!guestLoading && !guest) router.push('/login');
+  }, [guest, guestLoading, router]);
   const { data: activities = [], isLoading: loading, error: queryError } = useQuery({
     queryKey: ['activities'],
     queryFn: api.getActivities,

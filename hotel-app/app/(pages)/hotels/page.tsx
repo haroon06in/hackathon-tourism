@@ -1,14 +1,22 @@
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
+import { useRouter } from 'next/navigation';
 import { Hotel, RoomType } from '../../../types/hotel';
 import { api } from '../../../lib/api';
 import { RoomCard } from '../../../components/hotel/RoomCard';
 import { PreferencesForm } from '../../../components/hotel/PreferencesForm';
 import { Loader2 } from 'lucide-react';
+import { useGuest } from '../../../contexts/GuestContext';
 
 export default function HotelsPage() {
+  const { guest, isLoading: guestLoading } = useGuest();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (!guestLoading && !guest) router.push('/login');
+  }, [guest, guestLoading, router]);
   const { data: hotels = [], isLoading: loading, error: queryError } = useQuery({
     queryKey: ['hotels'],
     queryFn: api.getHotels,
