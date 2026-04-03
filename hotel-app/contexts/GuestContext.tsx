@@ -25,11 +25,9 @@ const GuestContext = createContext<GuestContextValue>({
 export function GuestProvider({ children }: { children: ReactNode }) {
   const [guest, setGuest] = useState<Profile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [mounted, setMounted] = useState(false);
 
   // Hydrate from localStorage on mount
   useEffect(() => {
-    setMounted(true);
     const email = localStorage.getItem(STORAGE_KEY);
     if (!email) {
       setIsLoading(false);
@@ -61,11 +59,6 @@ export function GuestProvider({ children }: { children: ReactNode }) {
     localStorage.setItem(STORAGE_KEY, profile.email);
     setGuest(profile);
   }, []);
-
-  // Prevent SSR mismatch
-  if (!mounted) {
-    return <>{children}</>;
-  }
 
   return (
     <GuestContext.Provider value={{ guest, isLoading, signIn, signOut, updateGuest }}>
