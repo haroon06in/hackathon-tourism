@@ -1,16 +1,24 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { useChat } from '../../hooks/useChat';
+import { useGuest } from '../../contexts/GuestContext';
 import { MessageBubble } from './MessageBubble';
 
 const QUICK_ACTIONS = [
-  "Order Coffee", 
-  "Valet Request", 
-  "Dinner Reservation", 
+  "Order Coffee",
+  "Valet Request",
+  "Dinner Reservation",
   "Late Check-out"
 ];
 
 export function ChatWindow() {
-  const { messages, isTyping, sendMessage } = useChat();
+  const { guest } = useGuest();
+  const guestProfile = useMemo(() => guest ? {
+    name: guest.full_name,
+    persona: guest.persona || undefined,
+    preferences: guest.preferences,
+  } : undefined, [guest]);
+
+  const { messages, isTyping, sendMessage } = useChat({ guestProfile });
   const [inputText, setInputText] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
 

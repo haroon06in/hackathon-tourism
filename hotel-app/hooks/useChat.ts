@@ -1,8 +1,13 @@
 import { useState, useCallback, useRef } from 'react';
-import { ChatMessage } from '../types/message';
+import { ChatMessage, SendMessageRequest } from '../types/message';
 import { api } from '../lib/api';
 
-export function useChat(locationSlug?: string) {
+interface UseChatOptions {
+  locationSlug?: string;
+  guestProfile?: SendMessageRequest['guestProfile'];
+}
+
+export function useChat(options?: UseChatOptions) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [isTyping, setIsTyping] = useState(false);
   const messagesRef = useRef<ChatMessage[]>([]);
@@ -24,7 +29,8 @@ export function useChat(locationSlug?: string) {
       const responseMessage = await api.sendMessage({
         text,
         history: messagesRef.current,
-        locationSlug,
+        locationSlug: options?.locationSlug,
+        guestProfile: options?.guestProfile,
       });
       const withResponse = [...messagesRef.current, responseMessage];
       messagesRef.current = withResponse;
@@ -34,7 +40,7 @@ export function useChat(locationSlug?: string) {
     } finally {
       setIsTyping(false);
     }
-  }, [locationSlug]);
+  }, [options?.locationSlug, options?.guestProfile]);
 
   return {
     messages,
