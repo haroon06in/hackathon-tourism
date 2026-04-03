@@ -42,6 +42,13 @@ export const api = {
 
   // Itinerary
   getItinerary: (profileId: string) => request<ItineraryItem[]>(`/api/itinerary?profileId=${encodeURIComponent(profileId)}`),
+  updateItineraryItem: (data: { id: string; status?: string; check_in?: string; check_out?: string; guests?: number; notes?: string }) =>
+    request<{ id: string; status: string }>('/api/itinerary', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    }),
+  deleteItineraryItem: (id: string) => request<{ success: boolean }>(`/api/itinerary?id=${encodeURIComponent(id)}`, { method: 'DELETE' }),
 
   // Transfer
   requestTransfer: (data: TransferRequest) => post<TransferResponse>('/api/transfer', data),
