@@ -2,19 +2,13 @@
 
 import { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
+import { useRouter } from 'next/navigation';
 import dynamic from 'next/dynamic';
 import { api } from '../../../lib/api';
 import { Location } from '../../../types/location';
+import { useGuest } from '../../../contexts/GuestContext';
 
 const ShuttleTracker = dynamic(() => import('../../../components/map/ShuttleTracker'), { ssr: false });
-
-// Mock guest data (would come from auth in production)
-const MOCK_GUEST = {
-  name: 'Liya Tadesse',
-  persona: 'adventurous',
-  currentBranch: 'bishoftu',
-  preferences: { dietary: 'vegan', bed_type: 'king', room_temp: 22 },
-};
 
 // Simulated upcoming itinerary
 const MOCK_ITINERARY = [
@@ -32,11 +26,22 @@ const ACTIVITY_SUGGESTIONS = [
 ];
 
 export default function DashboardPage() {
+  const { guest, isLoading: guestLoading } = useGuest();
+  const router = useRouter();
+
   const [showTransferModal, setShowTransferModal] = useState(false);
   const [transferFrom, setTransferFrom] = useState('');
   const [transferTo, setTransferTo] = useState('');
   const [transferRequested, setTransferRequested] = useState(false);
   const [currentTime, setCurrentTime] = useState('');
+
+  useEffect(() => {
+    if (!guestLoading && !guest) {
+      router.push('/login');
+    }
+  }, [guest, guestLoading, router]);
+
+  const prefs = (guest?.preferences || {}) as Record<string, unknown>;
 
   const { data: locations = [] } = useQuery<Location[]>({
     queryKey: ['locations'],
@@ -59,7 +64,7 @@ export default function DashboardPage() {
       await api.requestTransfer({
         fromLocationId: fromLocation.id,
         toLocationId: toLocation.id,
-        roomPreferences: MOCK_GUEST.preferences,
+        roomPreferences: prefs,
       });
       setTransferRequested(true);
       setShowTransferModal(false);
@@ -67,6 +72,14 @@ export default function DashboardPage() {
       console.error('Transfer request failed:', e);
     }
   };
+
+  if (guestLoading || !guest) {
+    return (
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <span className="material-symbols-outlined animate-spin text-primary text-4xl">progress_activity</span>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-7xl mx-auto px-6 pb-24 pt-8 md:pt-12 animate-in fade-in duration-500 w-full">
@@ -76,7 +89,7 @@ export default function DashboardPage() {
           <div>
             <span className="text-secondary font-bold tracking-widest text-[11px] uppercase mb-2 block">Guest Dashboard</span>
             <h1 className="text-4xl md:text-5xl font-headline text-primary tracking-tight">
-              Welcome, {MOCK_GUEST.name.split(' ')[0]}
+              Welcome, {guest?.full_name?.split(' ')[0] || 'Guest'}
             </h1>
             <p className="text-on-surface-variant mt-2">
               Currently at <strong className="text-primary">Kuriftu Bishoftu</strong> · {currentTime}
@@ -97,9 +110,9 @@ export default function DashboardPage() {
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           {[
             { label: 'Current Branch', value: 'Bishoftu', icon: 'location_on', color: 'bg-primary-fixed text-primary' },
-            { label: 'Room Temp', value: `${MOCK_GUEST.preferences.room_temp}°C`, icon: 'thermostat', color: 'bg-secondary-container text-on-secondary-container' },
+            { label: 'Room Temp', value: `${prefs.room_temp || 22}°C`, icon: 'thermostat', color: 'bg-secondary-container text-on-secondary-container' },
             { label: 'Next Activity', value: '4:00 PM', icon: 'schedule', color: 'bg-tertiary-container text-on-tertiary-container' },
-            { label: 'Persona', value: MOCK_GUEST.persona, icon: 'person', color: 'bg-surface-container text-on-surface' },
+            { label: 'Persona', value: guest?.persona || 'relaxed', icon: 'person', color: 'bg-surface-container text-on-surface' },
           ].map((stat) => (
             <div key={stat.label} className="bg-surface-container-lowest rounded-xl p-5 border border-outline-variant/10">
               <div className={`w-10 h-10 ${stat.color} rounded-lg flex items-center justify-center mb-3`}>
@@ -212,9 +225,9 @@ export default function DashboardPage() {
             <h3 className="text-lg font-headline text-primary mb-4">Room Preferences</h3>
             <div className="bg-surface-container-lowest rounded-xl p-5 border border-outline-variant/10 space-y-4">
               {[
-                { label: 'Bed Type', value: MOCK_GUEST.preferences.bed_type, icon: 'bed' },
-                { label: 'Room Temperature', value: `${MOCK_GUEST.preferences.room_temp}°C`, icon: 'thermostat' },
-                { label: 'Dietary', value: MOCK_GUEST.preferences.dietary, icon: 'restaurant' },
+                { label: 'Bed Type', value: String(prefs.bed_type || 'King'), icon: 'bed' },
+                { label: 'Room Temperature', value: `${prefs.room_temp || 22}°C`, icon: 'thermostat' },
+                { label: 'Dietary', value: String(prefs.dietary || 'None'), icon: 'restaurant' },
               ].map((pref) => (
                 <div key={pref.label} className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
@@ -311,7 +324,7 @@ export default function DashboardPage() {
             <div className="bg-primary-fixed/30 rounded-xl p-4 mb-6">
               <p className="text-xs text-primary font-medium flex items-center gap-2">
                 <span className="material-symbols-outlined text-[16px]">info</span>
-                Your preferences (King bed, 22°C, Vegan menu) will be synced to the destination.
+                Your preferences ({String(prefs.bed_type || 'King')} bed, {String(prefs.room_temp || 22)}°C, {String(prefs.dietary || 'No dietary')} menu) will be synced to the destination.
               </p>
             </div>
 
