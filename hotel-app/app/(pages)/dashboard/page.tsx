@@ -3,12 +3,10 @@
 import { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
-import dynamic from 'next/dynamic';
+import Link from 'next/link';
 import { api } from '../../../lib/api';
-import { Location } from '../../../types/location';
+import { Activity } from '../../../types/activity';
 import { useGuest } from '../../../contexts/GuestContext';
-
-const ShuttleTracker = dynamic(() => import('../../../components/map/ShuttleTracker'), { ssr: false });
 
 // Simulated upcoming itinerary
 const MOCK_ITINERARY = [
@@ -19,20 +17,14 @@ const MOCK_ITINERARY = [
   { id: '5', type: 'hotel', title: 'Highland Suite Check-in', location: 'Kuriftu Entoto', time: '15:00', date: 'Tomorrow', status: 'scheduled', icon: 'hotel' },
 ];
 
-const ACTIVITY_SUGGESTIONS = [
-  { name: 'Lakeside Spa Ritual', reason: 'Matches your wellness interests', price: 85, duration: '2 hours', icon: 'spa' },
-  { name: 'Forest Trail Hike', reason: 'Perfect for adventurous personas', price: 30, duration: '3 hours', icon: 'hiking' },
-  { name: 'Island Monastery Tour', reason: 'Highly rated cultural experience', price: 75, duration: '4 hours', icon: 'church' },
-];
+const CATEGORY_ICONS: Record<string, string> = {
+  wellness: 'spa', adventure: 'hiking', heritage: 'church', discovery: 'explore', family: 'family_restroom', dining: 'restaurant',
+};
 
 export default function DashboardPage() {
   const { guest, isLoading: guestLoading } = useGuest();
   const router = useRouter();
 
-  const [showTransferModal, setShowTransferModal] = useState(false);
-  const [transferFrom, setTransferFrom] = useState('');
-  const [transferTo, setTransferTo] = useState('');
-  const [transferRequested, setTransferRequested] = useState(false);
   const [currentTime, setCurrentTime] = useState('');
 
   useEffect(() => {
@@ -43,9 +35,10 @@ export default function DashboardPage() {
 
   const prefs = (guest?.preferences || {}) as Record<string, unknown>;
 
-  const { data: locations = [] } = useQuery<Location[]>({
-    queryKey: ['locations'],
-    queryFn: api.getLocations,
+  // Fetch activities filtered by persona for AI suggestions
+  const { data: suggestedActivities = [] } = useQuery<Activity[]>({
+    queryKey: ['activities'],
+    queryFn: api.getActivities,
   });
 
   useEffect(() => {
@@ -55,23 +48,18 @@ export default function DashboardPage() {
     return () => clearInterval(interval);
   }, []);
 
-  const fromLocation = locations.find((l) => l.slug === (transferFrom || 'bishoftu'));
-  const toLocation = locations.find((l) => l.slug === (transferTo || 'entoto'));
-
-  const handleTransferRequest = async () => {
-    if (!fromLocation || !toLocation) return;
-    try {
-      await api.requestTransfer({
-        fromLocationId: fromLocation.id,
-        toLocationId: toLocation.id,
-        roomPreferences: prefs,
-      });
-      setTransferRequested(true);
-      setShowTransferModal(false);
-    } catch (e) {
-      console.error('Transfer request failed:', e);
-    }
+  // Map persona to relevant activity categories
+  const personaCategoryMap: Record<string, string[]> = {
+    adventurous: ['adventure', 'discovery'],
+    relaxed: ['wellness'],
+    cultural: ['heritage', 'discovery'],
+    family: ['family', 'discovery'],
+    wellness: ['wellness'],
   };
+  const relevantCategories = personaCategoryMap[guest?.persona || 'relaxed'] || ['discovery'];
+  const aiSuggestions = suggestedActivities
+    .filter((a) => relevantCategories.includes(a.category))
+    .slice(0, 3);
 
   if (guestLoading || !guest) {
     return (
@@ -96,13 +84,13 @@ export default function DashboardPage() {
             </p>
           </div>
           <div className="flex gap-3">
-            <button
-              onClick={() => setShowTransferModal(true)}
+            <Link
+              href="/transfer"
               className="bg-gradient-to-r from-primary to-primary-container text-on-primary px-6 py-3 rounded-xl font-bold hover:opacity-90 transition-all active:scale-95 flex items-center gap-2"
             >
               <span className="material-symbols-outlined text-[20px]">swap_horiz</span>
               Request Transfer
-            </button>
+            </Link>
           </div>
         </div>
 
@@ -182,13 +170,6 @@ export default function DashboardPage() {
             </div>
           </section>
 
-          {/* Shuttle Tracker */}
-          {transferRequested && fromLocation && toLocation && (
-            <section className="animate-in slide-in-from-bottom-4 duration-500">
-              <h2 className="text-2xl font-headline text-primary mb-6">Shuttle Tracking</h2>
-              <ShuttleTracker from={fromLocation} to={toLocation} />
-            </section>
-          )}
         </div>
 
         {/* Right Column — Sidebar */}
@@ -200,22 +181,27 @@ export default function DashboardPage() {
               <h3 className="text-lg font-headline text-primary">Aura Suggests</h3>
             </div>
             <div className="space-y-3">
-              {ACTIVITY_SUGGESTIONS.map((activity) => (
-                <div key={activity.name} className="bg-surface-container-lowest rounded-xl p-4 border border-outline-variant/10 hover:border-primary/20 transition-all cursor-pointer group">
-                  <div className="flex items-start gap-3">
-                    <div className="w-10 h-10 bg-primary-fixed text-primary rounded-lg flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
-                      <span className="material-symbols-outlined text-[20px]">{activity.icon}</span>
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="font-bold text-on-surface text-sm">{activity.name}</p>
-                      <p className="text-xs text-on-surface-variant mt-0.5">{activity.reason}</p>
-                      <div className="flex items-center gap-3 mt-2">
-                        <span className="text-xs font-bold text-primary">${activity.price}</span>
-                        <span className="text-[10px] text-on-surface-variant">{activity.duration}</span>
+              {aiSuggestions.length === 0 && (
+                <p className="text-sm text-on-surface-variant">Loading suggestions...</p>
+              )}
+              {aiSuggestions.map((activity) => (
+                <Link key={activity.id} href="/activities">
+                  <div className="bg-surface-container-lowest rounded-xl p-4 border border-outline-variant/10 hover:border-primary/20 transition-all cursor-pointer group">
+                    <div className="flex items-start gap-3">
+                      <div className="w-10 h-10 bg-primary-fixed text-primary rounded-lg flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
+                        <span className="material-symbols-outlined text-[20px]">{CATEGORY_ICONS[activity.category] || 'explore'}</span>
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-bold text-on-surface text-sm">{activity.name}</p>
+                        <p className="text-xs text-on-surface-variant mt-0.5">Recommended for your {guest?.persona} persona</p>
+                        <div className="flex items-center gap-3 mt-2">
+                          <span className="text-xs font-bold text-primary">${activity.price}</span>
+                          <span className="text-[10px] text-on-surface-variant">{activity.duration}</span>
+                        </div>
                       </div>
                     </div>
                   </div>
-                </div>
+                </Link>
               ))}
             </div>
           </section>
@@ -252,93 +238,22 @@ export default function DashboardPage() {
                 { label: 'Room Service', icon: 'room_service', href: '/concierge' },
                 { label: 'Spa Booking', icon: 'spa', href: '/activities' },
                 { label: 'Concierge', icon: 'support_agent', href: '/concierge' },
-                { label: 'Transport', icon: 'directions_bus', action: () => setShowTransferModal(true) },
+                { label: 'Transport', icon: 'directions_bus', href: '/transfer' },
               ].map((action) => (
-                <button
+                <Link
                   key={action.label}
-                  onClick={() => {
-                    if ('action' in action && action.action) action.action();
-                    else if ('href' in action) window.location.href = action.href;
-                  }}
+                  href={action.href}
                   className="bg-surface-container-lowest rounded-xl p-4 border border-outline-variant/10 hover:border-primary/20 transition-all flex flex-col items-center gap-2 group"
                 >
                   <span className="material-symbols-outlined text-on-surface-variant group-hover:text-primary transition-colors">{action.icon}</span>
                   <span className="text-[10px] uppercase tracking-widest font-bold text-on-surface-variant">{action.label}</span>
-                </button>
+                </Link>
               ))}
             </div>
           </section>
         </div>
       </div>
 
-      {/* Transfer Modal */}
-      {showTransferModal && (
-        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-in fade-in duration-200">
-          <div className="bg-surface-container-lowest rounded-2xl p-8 max-w-md w-full border border-outline-variant/10 shadow-2xl animate-in zoom-in-95 duration-300">
-            <div className="flex items-center justify-between mb-6">
-              <h3 className="text-2xl font-headline text-primary">Branch Transfer</h3>
-              <button onClick={() => setShowTransferModal(false)} className="text-on-surface-variant hover:text-on-surface">
-                <span className="material-symbols-outlined">close</span>
-              </button>
-            </div>
-            <p className="text-sm text-on-surface-variant mb-6">
-              Your room preferences will be automatically applied at your destination branch.
-            </p>
-
-            <div className="space-y-4 mb-8">
-              <div>
-                <label className="block text-xs font-bold uppercase tracking-widest text-secondary mb-2">From</label>
-                <select
-                  value={transferFrom}
-                  onChange={(e) => setTransferFrom(e.target.value)}
-                  className="w-full bg-surface-container-high border-b-2 border-outline-variant/40 p-3 focus:outline-none focus:border-primary transition-all font-body text-sm rounded-t-lg"
-                >
-                  <option value="">Select branch</option>
-                  {locations.map((l) => (
-                    <option key={l.id} value={l.slug}>{l.name}</option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="flex justify-center">
-                <div className="w-10 h-10 bg-surface-container rounded-full flex items-center justify-center">
-                  <span className="material-symbols-outlined text-on-surface-variant">arrow_downward</span>
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold uppercase tracking-widest text-secondary mb-2">To</label>
-                <select
-                  value={transferTo}
-                  onChange={(e) => setTransferTo(e.target.value)}
-                  className="w-full bg-surface-container-high border-b-2 border-outline-variant/40 p-3 focus:outline-none focus:border-primary transition-all font-body text-sm rounded-t-lg"
-                >
-                  <option value="">Select branch</option>
-                  {locations.filter((l) => l.slug !== transferFrom).map((l) => (
-                    <option key={l.id} value={l.slug}>{l.name}</option>
-                  ))}
-                </select>
-              </div>
-            </div>
-
-            <div className="bg-primary-fixed/30 rounded-xl p-4 mb-6">
-              <p className="text-xs text-primary font-medium flex items-center gap-2">
-                <span className="material-symbols-outlined text-[16px]">info</span>
-                Your preferences ({String(prefs.bed_type || 'King')} bed, {String(prefs.room_temp || 22)}°C, {String(prefs.dietary || 'No dietary')} menu) will be synced to the destination.
-              </p>
-            </div>
-
-            <button
-              onClick={handleTransferRequest}
-              disabled={!transferFrom || !transferTo}
-              className="w-full bg-primary text-on-primary py-4 rounded-xl font-bold hover:opacity-90 transition-all disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-            >
-              <span className="material-symbols-outlined text-[20px]">directions_bus</span>
-              Confirm Transfer
-            </button>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
