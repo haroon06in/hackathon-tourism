@@ -43,7 +43,7 @@ export function ChatWindow() {
   };
 
   return (
-    <section className="flex-1 flex flex-col bg-surface-container-lowest rounded-xl shadow-sm border border-outline-variant/10 overflow-hidden min-h-[600px] h-[calc(100vh-180px)] md:max-h-[800px]">
+    <section className="flex-1 flex flex-col bg-surface-container-lowest rounded-xl shadow-sm border border-outline-variant/10 overflow-hidden min-h-[500px] h-[calc(100vh-260px)] md:max-h-[700px]">
       {/* Chat Header */}
       <div className="bg-surface-container-high px-6 py-5 flex items-center justify-between shadow-sm z-10">
         <div className="flex items-center gap-4">
