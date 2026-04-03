@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { api } from '../../../lib/api';
@@ -55,6 +55,23 @@ export default function DashboardPage() {
   const { data: suggestedActivities = [] } = useQuery<Activity[]>({
     queryKey: ['activities'],
     queryFn: api.getActivities,
+  });
+
+  const queryClient = useQueryClient();
+
+  const cancelMutation = useMutation({
+    mutationFn: (id: string) => api.updateItineraryItem({ id, status: 'cancelled' }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['itinerary'] }),
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: api.deleteItineraryItem,
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['itinerary'] }),
+  });
+
+  const completeMutation = useMutation({
+    mutationFn: (id: string) => api.updateItineraryItem({ id, status: 'completed' }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['itinerary'] }),
   });
 
   const personaCategoryMap: Record<string, string[]> = {
@@ -188,16 +205,47 @@ export default function DashboardPage() {
                               <p className="text-[10px] uppercase tracking-widest text-on-surface-variant font-bold">{formatDate(item.check_in)}</p>
                             </div>
                           </div>
-                          {isCompleted && (
-                            <span className="inline-flex items-center gap-1 mt-3 text-[10px] uppercase tracking-widest font-bold text-primary">
-                              <span className="material-symbols-outlined text-[14px]">check_circle</span> Completed
-                            </span>
-                          )}
-                          {isNext && (
-                            <span className="inline-flex items-center gap-1 mt-3 text-[10px] uppercase tracking-widest font-bold text-secondary">
-                              <span className="material-symbols-outlined text-[14px] animate-pulse">circle</span> Up Next
-                            </span>
-                          )}
+                          <div className="flex items-center justify-between mt-3">
+                            <div>
+                              {isCompleted && (
+                                <span className="inline-flex items-center gap-1 text-[10px] uppercase tracking-widest font-bold text-primary">
+                                  <span className="material-symbols-outlined text-[14px]">check_circle</span> Completed
+                                </span>
+                              )}
+                              {item.status === 'cancelled' && (
+                                <span className="inline-flex items-center gap-1 text-[10px] uppercase tracking-widest font-bold text-red-500">
+                                  <span className="material-symbols-outlined text-[14px]">cancel</span> Cancelled
+                                </span>
+                              )}
+                              {isNext && (
+                                <span className="inline-flex items-center gap-1 text-[10px] uppercase tracking-widest font-bold text-secondary">
+                                  <span className="material-symbols-outlined text-[14px] animate-pulse">circle</span> Up Next
+                                </span>
+                              )}
+                            </div>
+                            {item.status === 'confirmed' && (
+                              <div className="flex gap-2">
+                                <button
+                                  onClick={() => completeMutation.mutate(item.id)}
+                                  className="text-[10px] uppercase tracking-widest font-bold text-primary hover:bg-primary-fixed/20 px-2 py-1 rounded transition-all"
+                                >
+                                  Done
+                                </button>
+                                <button
+                                  onClick={() => cancelMutation.mutate(item.id)}
+                                  className="text-[10px] uppercase tracking-widest font-bold text-on-surface-variant hover:text-red-500 px-2 py-1 rounded transition-all"
+                                >
+                                  Cancel
+                                </button>
+                                <button
+                                  onClick={() => { if (confirm('Remove this booking?')) deleteMutation.mutate(item.id); }}
+                                  className="text-on-surface-variant hover:text-red-500 transition-all"
+                                >
+                                  <span className="material-symbols-outlined text-[16px]">delete</span>
+                                </button>
+                              </div>
+                            )}
+                          </div>
                         </div>
                       </div>
                     </div>
