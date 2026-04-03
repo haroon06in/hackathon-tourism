@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import dynamic from 'next/dynamic';
+import { api } from '../../../lib/api';
 import { Location } from '../../../types/location';
 
 const ShuttleTracker = dynamic(() => import('../../../components/map/ShuttleTracker'), { ssr: false });
@@ -39,7 +40,7 @@ export default function DashboardPage() {
 
   const { data: locations = [] } = useQuery<Location[]>({
     queryKey: ['locations'],
-    queryFn: () => fetch('/api/locations').then((r) => r.json()),
+    queryFn: api.getLocations,
   });
 
   useEffect(() => {
@@ -55,14 +56,10 @@ export default function DashboardPage() {
   const handleTransferRequest = async () => {
     if (!fromLocation || !toLocation) return;
     try {
-      await fetch('/api/transfer', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          fromLocationId: fromLocation.id,
-          toLocationId: toLocation.id,
-          roomPreferences: MOCK_GUEST.preferences,
-        }),
+      await api.requestTransfer({
+        fromLocationId: fromLocation.id,
+        toLocationId: toLocation.id,
+        roomPreferences: MOCK_GUEST.preferences,
       });
       setTransferRequested(true);
       setShowTransferModal(false);
