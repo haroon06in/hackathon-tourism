@@ -4,13 +4,14 @@ import "./globals.css";
 import Link from 'next/link';
 import { cn } from "../lib/utils";
 import Providers from "../components/Providers";
+import NavBar from "../components/NavBar";
 
-const manrope = Manrope({ 
+const manrope = Manrope({
   subsets: ["latin"],
   variable: '--font-body',
 });
 
-const notoSerif = Noto_Serif({ 
+const notoSerif = Noto_Serif({
   subsets: ["latin"],
   weight: ['400', '700'],
   variable: '--font-headline',
@@ -32,51 +33,14 @@ export default function RootLayout({
         <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet" />
       </head>
       <body className="bg-surface text-on-surface selection:bg-secondary-container min-h-screen flex flex-col font-body">
-        
-        {/* TopNavBar */}
-        <nav className="bg-white/70 dark:bg-stone-900/70 backdrop-blur-md fixed top-0 w-full z-50 flex justify-between items-center px-6 md:px-8 py-4 max-w-8xl mx-auto border-b border-outline-variant/10">
-          <div className="text-2xl font-serif tracking-tight text-emerald-950 dark:text-emerald-50">Kuriftu Resorts</div>
-          
-          <div className="hidden md:flex items-center gap-10">
-            <Link 
-              href="/hotels" 
-              className="text-emerald-900 dark:text-emerald-400 font-bold border-b-2 border-emerald-800/30 transition-colors duration-300"
-            >
-              Hotels
-            </Link>
-            <Link 
-              href="/concierge" 
-              className="text-stone-600 dark:text-stone-400 font-medium hover:text-emerald-800 dark:hover:text-emerald-300 transition-colors duration-300"
-            >
-              Concierge
-            </Link>
-            <Link
-              href="/activities"
-              className="text-stone-600 dark:text-stone-400 font-medium hover:text-emerald-800 dark:hover:text-emerald-300 transition-colors duration-300"
-            >
-              Activities
-            </Link>
-            <Link
-              href="/dashboard"
-              className="text-stone-600 dark:text-stone-400 font-medium hover:text-emerald-800 dark:hover:text-emerald-300 transition-colors duration-300"
-            >
-              Dashboard
-            </Link>
-          </div>
-
-          <Link href="/dashboard">
-            <button className="bg-primary text-on-primary px-6 py-2.5 rounded-lg font-medium hover:bg-primary-container transition-all active:opacity-80 active:scale-95">
-              My Stay
-            </button>
-          </Link>
-        </nav>
-
         <Providers>
-          <main className="flex-grow w-full">
+          <NavBar />
+
+          <main className="flex-grow w-full pt-20">
             {children}
           </main>
         </Providers>
-        
+
         {/* Footer */}
         <footer className="bg-stone-50 dark:bg-stone-950 w-full relative mt-auto border-t border-outline-variant/20">
           <div className="flex flex-col md:flex-row justify-between items-center w-full px-6 md:px-12 py-16 gap-8 max-w-7xl mx-auto">
@@ -84,7 +48,7 @@ export default function RootLayout({
               Kuriftu Resorts & Spa
               <p className="font-sans text-xs text-stone-500 mt-1 uppercase tracking-[0.2em]">The Lakeside Curated Living</p>
             </div>
-            
+
             <div className="flex flex-wrap justify-center gap-6 md:gap-8">
               <a className="font-sans text-sm tracking-wide text-stone-500 dark:text-stone-400 hover:text-emerald-900 dark:hover:text-emerald-200 transition-all" href="#">Our Story</a>
               <a className="font-sans text-sm tracking-wide text-stone-500 dark:text-stone-400 hover:text-emerald-900 dark:hover:text-emerald-200 transition-all" href="#">Sustainability</a>
@@ -92,7 +56,7 @@ export default function RootLayout({
               <a className="font-sans text-sm tracking-wide text-stone-500 dark:text-stone-400 hover:text-emerald-900 dark:hover:text-emerald-200 transition-all" href="/concierge">Contact</a>
               <a className="font-sans text-sm tracking-wide text-stone-500 dark:text-stone-400 hover:text-emerald-900 dark:hover:text-emerald-200 transition-all" href="#">Press</a>
             </div>
-            
+
             <div className="text-stone-500 dark:text-stone-400 font-sans text-[10px] tracking-widest text-center md:text-right">
               © {new Date().getFullYear()} Kuriftu Resorts & Spa. The Lakeside Curated Living.
             </div>

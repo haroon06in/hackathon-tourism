@@ -1,75 +1,104 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import dynamic from 'next/dynamic';
-import { Location } from '../../../types/location';
+import { useEffect } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useRouter } from 'next/navigation';
+import Link from 'next/link';
+import { api } from '../../../lib/api';
+import { Activity } from '../../../types/activity';
+import { ItineraryItem } from '../../../types/itinerary';
+import { useGuest } from '../../../contexts/GuestContext';
+import { useCurrentBranch } from '../../../hooks/useCurrentBranch';
 
-const ShuttleTracker = dynamic(() => import('../../../components/map/ShuttleTracker'), { ssr: false });
-
-// Mock guest data (would come from auth in production)
-const MOCK_GUEST = {
-  name: 'Liya Tadesse',
-  persona: 'adventurous',
-  currentBranch: 'bishoftu',
-  preferences: { dietary: 'vegan', bed_type: 'king', room_temp: 22 },
+const CATEGORY_ICONS: Record<string, string> = {
+  wellness: 'spa', adventure: 'hiking', heritage: 'church', discovery: 'explore', family: 'family_restroom', dining: 'restaurant',
 };
 
-// Simulated upcoming itinerary
-const MOCK_ITINERARY = [
-  { id: '1', type: 'hotel', title: 'Lakeside Suite Check-in', location: 'Kuriftu Bishoftu', time: '14:00', date: 'Today', status: 'completed', icon: 'hotel' },
-  { id: '2', type: 'activity', title: 'Sunset Kayaking', location: 'Lake Kuriftu', time: '16:00', date: 'Today', status: 'upcoming', icon: 'kayaking' },
-  { id: '3', type: 'transport', title: 'Shuttle to Entoto', location: 'Kuriftu Entoto', time: '09:00', date: 'Tomorrow', status: 'scheduled', icon: 'directions_bus' },
-  { id: '4', type: 'activity', title: 'Zipline Adventure', location: 'Entoto Mountains', time: '11:00', date: 'Tomorrow', status: 'scheduled', icon: 'paragliding' },
-  { id: '5', type: 'hotel', title: 'Highland Suite Check-in', location: 'Kuriftu Entoto', time: '15:00', date: 'Tomorrow', status: 'scheduled', icon: 'hotel' },
-];
+const TYPE_ICONS: Record<string, string> = {
+  hotel: 'hotel', activity: 'local_activity', transport: 'directions_bus',
+};
 
-const ACTIVITY_SUGGESTIONS = [
-  { name: 'Lakeside Spa Ritual', reason: 'Matches your wellness interests', price: 85, duration: '2 hours', icon: 'spa' },
-  { name: 'Forest Trail Hike', reason: 'Perfect for adventurous personas', price: 30, duration: '3 hours', icon: 'hiking' },
-  { name: 'Island Monastery Tour', reason: 'Highly rated cultural experience', price: 75, duration: '4 hours', icon: 'church' },
-];
+function formatDate(dateStr: string | null) {
+  if (!dateStr) return '';
+  const d = new Date(dateStr);
+  const today = new Date();
+  const tomorrow = new Date(today);
+  tomorrow.setDate(tomorrow.getDate() + 1);
+
+  if (d.toDateString() === today.toDateString()) return 'Today';
+  if (d.toDateString() === tomorrow.toDateString()) return 'Tomorrow';
+  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+}
+
+function formatTime(dateStr: string | null) {
+  if (!dateStr) return '';
+  return new Date(dateStr).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+}
 
 export default function DashboardPage() {
-  const [showTransferModal, setShowTransferModal] = useState(false);
-  const [transferFrom, setTransferFrom] = useState('');
-  const [transferTo, setTransferTo] = useState('');
-  const [transferRequested, setTransferRequested] = useState(false);
-  const [currentTime, setCurrentTime] = useState('');
-
-  const { data: locations = [] } = useQuery<Location[]>({
-    queryKey: ['locations'],
-    queryFn: () => fetch('/api/locations').then((r) => r.json()),
-  });
+  const { guest, isLoading: guestLoading } = useGuest();
+  const router = useRouter();
 
   useEffect(() => {
-    const update = () => setCurrentTime(new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }));
-    update();
-    const interval = setInterval(update, 60000);
-    return () => clearInterval(interval);
-  }, []);
+    if (!guestLoading && !guest) router.push('/login');
+  }, [guest, guestLoading, router]);
 
-  const fromLocation = locations.find((l) => l.slug === (transferFrom || 'bishoftu'));
-  const toLocation = locations.find((l) => l.slug === (transferTo || 'entoto'));
+  const prefs = (guest?.preferences || {}) as Record<string, unknown>;
+  const { branchName } = useCurrentBranch();
 
-  const handleTransferRequest = async () => {
-    if (!fromLocation || !toLocation) return;
-    try {
-      await fetch('/api/transfer', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          fromLocationId: fromLocation.id,
-          toLocationId: toLocation.id,
-          roomPreferences: MOCK_GUEST.preferences,
-        }),
-      });
-      setTransferRequested(true);
-      setShowTransferModal(false);
-    } catch (e) {
-      console.error('Transfer request failed:', e);
-    }
+  // Fetch real itinerary
+  const { data: itinerary = [] } = useQuery<ItineraryItem[]>({
+    queryKey: ['itinerary', guest?.id],
+    queryFn: () => api.getItinerary(guest!.id),
+    enabled: !!guest?.id,
+  });
+
+  // Fetch activities for AI suggestions
+  const { data: suggestedActivities = [] } = useQuery<Activity[]>({
+    queryKey: ['activities'],
+    queryFn: api.getActivities,
+  });
+
+  const queryClient = useQueryClient();
+
+  const cancelMutation = useMutation({
+    mutationFn: (id: string) => api.updateItineraryItem({ id, status: 'cancelled' }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['itinerary'] }),
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: api.deleteItineraryItem,
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['itinerary'] }),
+  });
+
+  const completeMutation = useMutation({
+    mutationFn: (id: string) => api.updateItineraryItem({ id, status: 'completed' }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['itinerary'] }),
+  });
+
+  const personaCategoryMap: Record<string, string[]> = {
+    adventurous: ['adventure', 'discovery'],
+    relaxed: ['wellness'],
+    cultural: ['heritage', 'discovery'],
+    family: ['family', 'discovery'],
+    wellness: ['wellness'],
   };
+  const relevantCategories = personaCategoryMap[guest?.persona || 'relaxed'] || ['discovery'];
+  const aiSuggestions = suggestedActivities
+    .filter((a) => relevantCategories.includes(a.category))
+    .slice(0, 3);
+
+  if (guestLoading || !guest) {
+    return (
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <span className="material-symbols-outlined animate-spin text-primary text-4xl">progress_activity</span>
+      </div>
+    );
+  }
+
+  // Derive next activity time from itinerary
+  const nextItem = itinerary.find((i) => i.status === 'confirmed');
+  const nextTimeDisplay = nextItem ? formatTime(nextItem.check_in) : '—';
 
   return (
     <div className="max-w-7xl mx-auto px-6 pb-24 pt-8 md:pt-12 animate-in fade-in duration-500 w-full">
@@ -79,30 +108,30 @@ export default function DashboardPage() {
           <div>
             <span className="text-secondary font-bold tracking-widest text-[11px] uppercase mb-2 block">Guest Dashboard</span>
             <h1 className="text-4xl md:text-5xl font-headline text-primary tracking-tight">
-              Welcome, {MOCK_GUEST.name.split(' ')[0]}
+              Welcome, {guest.full_name.split(' ')[0]}
             </h1>
             <p className="text-on-surface-variant mt-2">
-              Currently at <strong className="text-primary">Kuriftu Bishoftu</strong> · {currentTime}
+              Your living itinerary across Kuriftu branches
             </p>
           </div>
           <div className="flex gap-3">
-            <button
-              onClick={() => setShowTransferModal(true)}
+            <Link
+              href="/transfer"
               className="bg-gradient-to-r from-primary to-primary-container text-on-primary px-6 py-3 rounded-xl font-bold hover:opacity-90 transition-all active:scale-95 flex items-center gap-2"
             >
               <span className="material-symbols-outlined text-[20px]">swap_horiz</span>
               Request Transfer
-            </button>
+            </Link>
           </div>
         </div>
 
         {/* Quick stats */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           {[
-            { label: 'Current Branch', value: 'Bishoftu', icon: 'location_on', color: 'bg-primary-fixed text-primary' },
-            { label: 'Room Temp', value: `${MOCK_GUEST.preferences.room_temp}°C`, icon: 'thermostat', color: 'bg-secondary-container text-on-secondary-container' },
-            { label: 'Next Activity', value: '4:00 PM', icon: 'schedule', color: 'bg-tertiary-container text-on-tertiary-container' },
-            { label: 'Persona', value: MOCK_GUEST.persona, icon: 'person', color: 'bg-surface-container text-on-surface' },
+            { label: 'Current Branch', value: branchName?.replace('Kuriftu ', '') || 'Not checked in', icon: 'location_on', color: 'bg-primary-fixed text-primary' },
+            { label: 'Room Temp', value: `${prefs.room_temp || 22}°C`, icon: 'thermostat', color: 'bg-secondary-container text-on-secondary-container' },
+            { label: 'Next Up', value: nextTimeDisplay, icon: 'schedule', color: 'bg-tertiary-container text-on-tertiary-container' },
+            { label: 'Persona', value: guest.persona || 'relaxed', icon: 'person', color: 'bg-surface-container text-on-surface' },
           ].map((stat) => (
             <div key={stat.label} className="bg-surface-container-lowest rounded-xl p-5 border border-outline-variant/10">
               <div className={`w-10 h-10 ${stat.color} rounded-lg flex items-center justify-center mb-3`}>
@@ -118,67 +147,115 @@ export default function DashboardPage() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Left Column — Itinerary */}
         <div className="lg:col-span-2 space-y-8">
-          {/* Living Itinerary */}
           <section>
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-2xl font-headline text-primary">Living Itinerary</h2>
               <span className="text-xs font-bold uppercase tracking-widest text-on-surface-variant">The Kuriftu Loop</span>
             </div>
 
-            <div className="space-y-1">
-              {MOCK_ITINERARY.map((item, idx) => (
-                <div key={item.id} className="flex gap-4">
-                  {/* Timeline line */}
-                  <div className="flex flex-col items-center">
-                    <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 ${
-                      item.status === 'completed' ? 'bg-primary text-on-primary' :
-                      item.status === 'upcoming' ? 'bg-secondary-container text-on-secondary-container' :
-                      'bg-surface-container text-on-surface-variant'
-                    }`}>
-                      <span className="material-symbols-outlined text-[20px]">{item.icon}</span>
-                    </div>
-                    {idx < MOCK_ITINERARY.length - 1 && (
-                      <div className={`w-0.5 flex-1 my-1 ${item.status === 'completed' ? 'bg-primary/30' : 'bg-outline-variant/20'}`} />
-                    )}
-                  </div>
+            {itinerary.length === 0 ? (
+              <div className="bg-surface-container-lowest rounded-xl p-10 border border-outline-variant/10 text-center">
+                <span className="material-symbols-outlined text-4xl text-on-surface-variant/40 mb-4 block">calendar_today</span>
+                <p className="font-headline text-lg text-primary mb-2">No bookings yet</p>
+                <p className="text-sm text-on-surface-variant mb-6">Book a hotel or activity to see your living itinerary here.</p>
+                <div className="flex gap-3 justify-center">
+                  <Link href="/hotels" className="bg-primary text-on-primary px-6 py-3 rounded-xl font-bold hover:opacity-90 transition-all">
+                    Book Hotel
+                  </Link>
+                  <Link href="/activities" className="bg-surface-container text-on-surface px-6 py-3 rounded-xl font-bold hover:bg-surface-container-high transition-all">
+                    Browse Activities
+                  </Link>
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-1">
+                {itinerary.map((item, idx) => {
+                  const title = item.type === 'hotel'
+                    ? `${item.room_types?.name || 'Room'} at ${item.hotels?.name || 'Hotel'}`
+                    : item.type === 'activity'
+                    ? item.activities?.name || 'Activity'
+                    : `Transfer to ${item.locations?.name || 'Branch'}`;
 
-                  {/* Content */}
-                  <div className={`flex-1 pb-6 ${item.status === 'completed' ? 'opacity-60' : ''}`}>
-                    <div className="bg-surface-container-lowest rounded-xl p-5 border border-outline-variant/10">
-                      <div className="flex items-start justify-between">
-                        <div>
-                          <p className="font-bold text-on-surface">{item.title}</p>
-                          <p className="text-sm text-on-surface-variant mt-1">{item.location}</p>
+                  const location = item.locations?.name || item.hotels?.name || '';
+                  const isCompleted = item.status === 'completed';
+                  const isNext = !isCompleted && idx === itinerary.findIndex((i) => i.status !== 'completed');
+
+                  return (
+                    <div key={item.id} className="flex gap-4">
+                      <div className="flex flex-col items-center">
+                        <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 ${
+                          isCompleted ? 'bg-primary text-on-primary' :
+                          isNext ? 'bg-secondary-container text-on-secondary-container' :
+                          'bg-surface-container text-on-surface-variant'
+                        }`}>
+                          <span className="material-symbols-outlined text-[20px]">{TYPE_ICONS[item.type] || 'event'}</span>
                         </div>
-                        <div className="text-right">
-                          <p className="text-sm font-bold text-primary">{item.time}</p>
-                          <p className="text-[10px] uppercase tracking-widest text-on-surface-variant font-bold">{item.date}</p>
+                        {idx < itinerary.length - 1 && (
+                          <div className={`w-0.5 flex-1 my-1 ${isCompleted ? 'bg-primary/30' : 'bg-outline-variant/20'}`} />
+                        )}
+                      </div>
+
+                      <div className={`flex-1 pb-6 ${isCompleted ? 'opacity-60' : ''}`}>
+                        <div className="bg-surface-container-lowest rounded-xl p-5 border border-outline-variant/10">
+                          <div className="flex items-start justify-between">
+                            <div>
+                              <p className="font-bold text-on-surface">{title}</p>
+                              <p className="text-sm text-on-surface-variant mt-1">{location}</p>
+                            </div>
+                            <div className="text-right">
+                              <p className="text-sm font-bold text-primary">{formatTime(item.check_in)}</p>
+                              <p className="text-[10px] uppercase tracking-widest text-on-surface-variant font-bold">{formatDate(item.check_in)}</p>
+                            </div>
+                          </div>
+                          <div className="flex items-center justify-between mt-3">
+                            <div>
+                              {isCompleted && (
+                                <span className="inline-flex items-center gap-1 text-[10px] uppercase tracking-widest font-bold text-primary">
+                                  <span className="material-symbols-outlined text-[14px]">check_circle</span> Completed
+                                </span>
+                              )}
+                              {item.status === 'cancelled' && (
+                                <span className="inline-flex items-center gap-1 text-[10px] uppercase tracking-widest font-bold text-red-500">
+                                  <span className="material-symbols-outlined text-[14px]">cancel</span> Cancelled
+                                </span>
+                              )}
+                              {isNext && (
+                                <span className="inline-flex items-center gap-1 text-[10px] uppercase tracking-widest font-bold text-secondary">
+                                  <span className="material-symbols-outlined text-[14px] animate-pulse">circle</span> Up Next
+                                </span>
+                              )}
+                            </div>
+                            {item.status === 'confirmed' && (
+                              <div className="flex gap-2">
+                                <button
+                                  onClick={() => completeMutation.mutate(item.id)}
+                                  className="text-[10px] uppercase tracking-widest font-bold text-primary hover:bg-primary-fixed/20 px-2 py-1 rounded transition-all"
+                                >
+                                  Done
+                                </button>
+                                <button
+                                  onClick={() => cancelMutation.mutate(item.id)}
+                                  className="text-[10px] uppercase tracking-widest font-bold text-on-surface-variant hover:text-red-500 px-2 py-1 rounded transition-all"
+                                >
+                                  Cancel
+                                </button>
+                                <button
+                                  onClick={() => { if (confirm('Remove this booking?')) deleteMutation.mutate(item.id); }}
+                                  className="text-on-surface-variant hover:text-red-500 transition-all"
+                                >
+                                  <span className="material-symbols-outlined text-[16px]">delete</span>
+                                </button>
+                              </div>
+                            )}
+                          </div>
                         </div>
                       </div>
-                      {item.status === 'completed' && (
-                        <span className="inline-flex items-center gap-1 mt-3 text-[10px] uppercase tracking-widest font-bold text-primary">
-                          <span className="material-symbols-outlined text-[14px]">check_circle</span> Completed
-                        </span>
-                      )}
-                      {item.status === 'upcoming' && (
-                        <span className="inline-flex items-center gap-1 mt-3 text-[10px] uppercase tracking-widest font-bold text-secondary">
-                          <span className="material-symbols-outlined text-[14px] animate-pulse">circle</span> Up Next
-                        </span>
-                      )}
                     </div>
-                  </div>
-                </div>
-              ))}
-            </div>
+                  );
+                })}
+              </div>
+            )}
           </section>
-
-          {/* Shuttle Tracker */}
-          {transferRequested && fromLocation && toLocation && (
-            <section className="animate-in slide-in-from-bottom-4 duration-500">
-              <h2 className="text-2xl font-headline text-primary mb-6">Shuttle Tracking</h2>
-              <ShuttleTracker from={fromLocation} to={toLocation} />
-            </section>
-          )}
         </div>
 
         {/* Right Column — Sidebar */}
@@ -190,22 +267,27 @@ export default function DashboardPage() {
               <h3 className="text-lg font-headline text-primary">Aura Suggests</h3>
             </div>
             <div className="space-y-3">
-              {ACTIVITY_SUGGESTIONS.map((activity) => (
-                <div key={activity.name} className="bg-surface-container-lowest rounded-xl p-4 border border-outline-variant/10 hover:border-primary/20 transition-all cursor-pointer group">
-                  <div className="flex items-start gap-3">
-                    <div className="w-10 h-10 bg-primary-fixed text-primary rounded-lg flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
-                      <span className="material-symbols-outlined text-[20px]">{activity.icon}</span>
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="font-bold text-on-surface text-sm">{activity.name}</p>
-                      <p className="text-xs text-on-surface-variant mt-0.5">{activity.reason}</p>
-                      <div className="flex items-center gap-3 mt-2">
-                        <span className="text-xs font-bold text-primary">${activity.price}</span>
-                        <span className="text-[10px] text-on-surface-variant">{activity.duration}</span>
+              {aiSuggestions.length === 0 && (
+                <p className="text-sm text-on-surface-variant">Loading suggestions...</p>
+              )}
+              {aiSuggestions.map((activity) => (
+                <Link key={activity.id} href="/activities">
+                  <div className="bg-surface-container-lowest rounded-xl p-4 border border-outline-variant/10 hover:border-primary/20 transition-all cursor-pointer group">
+                    <div className="flex items-start gap-3">
+                      <div className="w-10 h-10 bg-primary-fixed text-primary rounded-lg flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
+                        <span className="material-symbols-outlined text-[20px]">{CATEGORY_ICONS[activity.category] || 'explore'}</span>
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-bold text-on-surface text-sm">{activity.name}</p>
+                        <p className="text-xs text-on-surface-variant mt-0.5">Recommended for your {guest.persona} persona</p>
+                        <div className="flex items-center gap-3 mt-2">
+                          <span className="text-xs font-bold text-primary">${activity.price}</span>
+                          <span className="text-[10px] text-on-surface-variant">{activity.duration}</span>
+                        </div>
                       </div>
                     </div>
                   </div>
-                </div>
+                </Link>
               ))}
             </div>
           </section>
@@ -215,9 +297,9 @@ export default function DashboardPage() {
             <h3 className="text-lg font-headline text-primary mb-4">Room Preferences</h3>
             <div className="bg-surface-container-lowest rounded-xl p-5 border border-outline-variant/10 space-y-4">
               {[
-                { label: 'Bed Type', value: MOCK_GUEST.preferences.bed_type, icon: 'bed' },
-                { label: 'Room Temperature', value: `${MOCK_GUEST.preferences.room_temp}°C`, icon: 'thermostat' },
-                { label: 'Dietary', value: MOCK_GUEST.preferences.dietary, icon: 'restaurant' },
+                { label: 'Bed Type', value: String(prefs.bed_type || 'King'), icon: 'bed' },
+                { label: 'Room Temperature', value: `${prefs.room_temp || 22}°C`, icon: 'thermostat' },
+                { label: 'Dietary', value: String(prefs.dietary || 'None'), icon: 'restaurant' },
               ].map((pref) => (
                 <div key={pref.label} className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
@@ -239,96 +321,24 @@ export default function DashboardPage() {
             <h3 className="text-lg font-headline text-primary mb-4">Quick Actions</h3>
             <div className="grid grid-cols-2 gap-3">
               {[
-                { label: 'Room Service', icon: 'room_service', href: '/concierge' },
+                { label: 'Room Service', icon: 'room_service', href: '/room-service' },
                 { label: 'Spa Booking', icon: 'spa', href: '/activities' },
-                { label: 'Concierge', icon: 'support_agent', href: '/concierge' },
-                { label: 'Transport', icon: 'directions_bus', action: () => setShowTransferModal(true) },
+                { label: 'Pickup', icon: 'local_taxi', href: '/pickup' },
+                { label: 'Transport', icon: 'directions_bus', href: '/transfer' },
               ].map((action) => (
-                <button
+                <Link
                   key={action.label}
-                  onClick={() => {
-                    if ('action' in action && action.action) action.action();
-                    else if ('href' in action) window.location.href = action.href;
-                  }}
+                  href={action.href}
                   className="bg-surface-container-lowest rounded-xl p-4 border border-outline-variant/10 hover:border-primary/20 transition-all flex flex-col items-center gap-2 group"
                 >
                   <span className="material-symbols-outlined text-on-surface-variant group-hover:text-primary transition-colors">{action.icon}</span>
                   <span className="text-[10px] uppercase tracking-widest font-bold text-on-surface-variant">{action.label}</span>
-                </button>
+                </Link>
               ))}
             </div>
           </section>
         </div>
       </div>
-
-      {/* Transfer Modal */}
-      {showTransferModal && (
-        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-in fade-in duration-200">
-          <div className="bg-surface-container-lowest rounded-2xl p-8 max-w-md w-full border border-outline-variant/10 shadow-2xl animate-in zoom-in-95 duration-300">
-            <div className="flex items-center justify-between mb-6">
-              <h3 className="text-2xl font-headline text-primary">Branch Transfer</h3>
-              <button onClick={() => setShowTransferModal(false)} className="text-on-surface-variant hover:text-on-surface">
-                <span className="material-symbols-outlined">close</span>
-              </button>
-            </div>
-            <p className="text-sm text-on-surface-variant mb-6">
-              Your room preferences will be automatically applied at your destination branch.
-            </p>
-
-            <div className="space-y-4 mb-8">
-              <div>
-                <label className="block text-xs font-bold uppercase tracking-widest text-secondary mb-2">From</label>
-                <select
-                  value={transferFrom}
-                  onChange={(e) => setTransferFrom(e.target.value)}
-                  className="w-full bg-surface-container-high border-b-2 border-outline-variant/40 p-3 focus:outline-none focus:border-primary transition-all font-body text-sm rounded-t-lg"
-                >
-                  <option value="">Select branch</option>
-                  {locations.map((l) => (
-                    <option key={l.id} value={l.slug}>{l.name}</option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="flex justify-center">
-                <div className="w-10 h-10 bg-surface-container rounded-full flex items-center justify-center">
-                  <span className="material-symbols-outlined text-on-surface-variant">arrow_downward</span>
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold uppercase tracking-widest text-secondary mb-2">To</label>
-                <select
-                  value={transferTo}
-                  onChange={(e) => setTransferTo(e.target.value)}
-                  className="w-full bg-surface-container-high border-b-2 border-outline-variant/40 p-3 focus:outline-none focus:border-primary transition-all font-body text-sm rounded-t-lg"
-                >
-                  <option value="">Select branch</option>
-                  {locations.filter((l) => l.slug !== transferFrom).map((l) => (
-                    <option key={l.id} value={l.slug}>{l.name}</option>
-                  ))}
-                </select>
-              </div>
-            </div>
-
-            <div className="bg-primary-fixed/30 rounded-xl p-4 mb-6">
-              <p className="text-xs text-primary font-medium flex items-center gap-2">
-                <span className="material-symbols-outlined text-[16px]">info</span>
-                Your preferences (King bed, 22°C, Vegan menu) will be synced to the destination.
-              </p>
-            </div>
-
-            <button
-              onClick={handleTransferRequest}
-              disabled={!transferFrom || !transferTo}
-              className="w-full bg-primary text-on-primary py-4 rounded-xl font-bold hover:opacity-90 transition-all disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-            >
-              <span className="material-symbols-outlined text-[20px]">directions_bus</span>
-              Confirm Transfer
-            </button>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

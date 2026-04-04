@@ -1,16 +1,28 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { useChat } from '../../hooks/useChat';
+import { useGuest } from '../../contexts/GuestContext';
+import { useCurrentBranch } from '../../hooks/useCurrentBranch';
 import { MessageBubble } from './MessageBubble';
 
 const QUICK_ACTIONS = [
-  "Order Coffee", 
-  "Valet Request", 
-  "Dinner Reservation", 
-  "Late Check-out"
+  "Order Coffee",
+  "Valet Request",
+  "Dinner Reservation",
+  "Late Check-out",
+  "What's for dinner?"
 ];
 
 export function ChatWindow() {
-  const { messages, isTyping, sendMessage } = useChat();
+  const { guest } = useGuest();
+  const { branchSlug } = useCurrentBranch();
+
+  const guestProfile = useMemo(() => guest ? {
+    name: guest.full_name,
+    persona: guest.persona || undefined,
+    preferences: guest.preferences,
+  } : undefined, [guest]);
+
+  const { messages, isTyping, sendMessage } = useChat({ guestProfile, locationSlug: branchSlug || undefined });
   const [inputText, setInputText] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -35,7 +47,7 @@ export function ChatWindow() {
   };
 
   return (
-    <section className="flex-1 flex flex-col bg-surface-container-lowest rounded-xl shadow-sm border border-outline-variant/10 overflow-hidden min-h-[600px] h-[calc(100vh-180px)] md:max-h-[800px]">
+    <section className="flex-1 flex flex-col bg-surface-container-lowest rounded-xl shadow-sm border border-outline-variant/10 overflow-hidden min-h-[500px] h-[calc(100vh-260px)] md:max-h-[700px]">
       {/* Chat Header */}
       <div className="bg-surface-container-high px-6 py-5 flex items-center justify-between shadow-sm z-10">
         <div className="flex items-center gap-4">

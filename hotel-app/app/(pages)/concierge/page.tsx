@@ -6,7 +6,7 @@ import Image from 'next/image';
 
 export default function ConciergePage() {
   return (
-    <div className="flex flex-col md:flex-row max-w-7xl mx-auto w-full gap-8 animate-in fade-in slide-in-from-bottom-4 duration-700 pb-12">
+    <div className="flex flex-col md:flex-row max-w-7xl mx-auto w-full gap-8 animate-in fade-in slide-in-from-bottom-4 duration-700 pb-12 px-6 pt-4">
       {/* Left Column: Sidebar / Profile Info */}
       <aside className="w-full md:w-80 flex flex-col gap-6 shrink-0 z-10">
         

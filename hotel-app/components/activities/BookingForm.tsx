@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Activity, ActivityBookingRequest } from '../../types/activity';
 import { useBooking } from '../../hooks/useBooking';
+import { useGuest } from '../../contexts/GuestContext';
 
 interface BookingFormProps {
   activity: Activity;
@@ -10,6 +11,7 @@ interface BookingFormProps {
 
 export function BookingForm({ activity, onSuccess, onCancel }: BookingFormProps) {
   const { bookActivity, isSubmitting, error, success } = useBooking();
+  const { guest } = useGuest();
   
   const [bookingDetails, setBookingDetails] = useState({
     date: '',
@@ -21,7 +23,8 @@ export function BookingForm({ activity, onSuccess, onCancel }: BookingFormProps)
     e.preventDefault();
     const req: ActivityBookingRequest = {
       activityId: activity.id,
-      ...bookingDetails
+      ...bookingDetails,
+      profileId: guest?.id,
     };
 
     const isSuccess = await bookActivity(req);

@@ -1,44 +1,50 @@
-import { useState } from 'react';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { BookingRequest } from '../types/booking';
 import { ActivityBookingRequest } from '../types/activity';
 import { api } from '../lib/api';
+import { useToast } from '../components/ui/Toast';
 
 export function useBooking() {
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState(false);
+  const queryClient = useQueryClient();
+  const { notify } = useToast();
+
+  const hotelMutation = useMutation({
+    mutationFn: api.submitBooking,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['itinerary'] });
+      notify('Hotel reservation confirmed!', 'success', 'hotel');
+    },
+  });
+
+  const activityMutation = useMutation({
+    mutationFn: api.submitActivityBooking,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['itinerary'] });
+      notify('Activity booked successfully!', 'success', 'local_activity');
+    },
+  });
 
   const bookHotel = async (data: BookingRequest) => {
-    setIsSubmitting(true);
-    setError(null);
-    setSuccess(false);
     try {
-      await api.submitBooking(data);
-      setSuccess(true);
+      await hotelMutation.mutateAsync(data);
       return true;
-    } catch (err: any) {
-      setError(err.message || 'An error occurred during booking.');
+    } catch {
       return false;
-    } finally {
-      setIsSubmitting(false);
     }
   };
 
   const bookActivity = async (data: ActivityBookingRequest) => {
-    setIsSubmitting(true);
-    setError(null);
-    setSuccess(false);
     try {
-      await api.submitActivityBooking(data);
-      setSuccess(true);
+      await activityMutation.mutateAsync(data);
       return true;
-    } catch (err: any) {
-      setError(err.message || 'An error occurred during booking.');
+    } catch {
       return false;
-    } finally {
-      setIsSubmitting(false);
     }
   };
+
+  const isSubmitting = hotelMutation.isPending || activityMutation.isPending;
+  const error = hotelMutation.error?.message || activityMutation.error?.message || null;
+  const success = hotelMutation.isSuccess || activityMutation.isSuccess;
 
   return {
     isSubmitting,
@@ -47,8 +53,8 @@ export function useBooking() {
     bookHotel,
     bookActivity,
     resetState: () => {
-      setError(null);
-      setSuccess(false);
-    }
+      hotelMutation.reset();
+      activityMutation.reset();
+    },
   };
 }

@@ -14,4 +14,5 @@ export interface ActivityBookingRequest {
   date: string;
   timeSlot: string;
   guests: number;
+  profileId?: string;
 }
