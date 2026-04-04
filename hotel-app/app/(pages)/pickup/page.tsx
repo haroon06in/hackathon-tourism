@@ -26,6 +26,7 @@ const AIRPORT_LOCATION: Location = {
   longitude: 38.7993,
   address: 'Addis Ababa, Ethiopia',
   amenities: [],
+  menu: [],
 };
 
 export default function PickupPage() {

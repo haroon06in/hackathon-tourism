@@ -8,6 +8,7 @@ import { api } from '../../../lib/api';
 import { Activity } from '../../../types/activity';
 import { ItineraryItem } from '../../../types/itinerary';
 import { useGuest } from '../../../contexts/GuestContext';
+import { useCurrentBranch } from '../../../hooks/useCurrentBranch';
 
 const CATEGORY_ICONS: Record<string, string> = {
   wellness: 'spa', adventure: 'hiking', heritage: 'church', discovery: 'explore', family: 'family_restroom', dining: 'restaurant',
@@ -43,6 +44,7 @@ export default function DashboardPage() {
   }, [guest, guestLoading, router]);
 
   const prefs = (guest?.preferences || {}) as Record<string, unknown>;
+  const { branchName } = useCurrentBranch();
 
   // Fetch real itinerary
   const { data: itinerary = [] } = useQuery<ItineraryItem[]>({
@@ -126,7 +128,7 @@ export default function DashboardPage() {
         {/* Quick stats */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           {[
-            { label: 'Bookings', value: String(itinerary.length), icon: 'event', color: 'bg-primary-fixed text-primary' },
+            { label: 'Current Branch', value: branchName?.replace('Kuriftu ', '') || 'Not checked in', icon: 'location_on', color: 'bg-primary-fixed text-primary' },
             { label: 'Room Temp', value: `${prefs.room_temp || 22}°C`, icon: 'thermostat', color: 'bg-secondary-container text-on-secondary-container' },
             { label: 'Next Up', value: nextTimeDisplay, icon: 'schedule', color: 'bg-tertiary-container text-on-tertiary-container' },
             { label: 'Persona', value: guest.persona || 'relaxed', icon: 'person', color: 'bg-surface-container text-on-surface' },
@@ -319,7 +321,7 @@ export default function DashboardPage() {
             <h3 className="text-lg font-headline text-primary mb-4">Quick Actions</h3>
             <div className="grid grid-cols-2 gap-3">
               {[
-                { label: 'Room Service', icon: 'room_service', href: '/concierge' },
+                { label: 'Room Service', icon: 'room_service', href: '/room-service' },
                 { label: 'Spa Booking', icon: 'spa', href: '/activities' },
                 { label: 'Pickup', icon: 'local_taxi', href: '/pickup' },
                 { label: 'Transport', icon: 'directions_bus', href: '/transfer' },
