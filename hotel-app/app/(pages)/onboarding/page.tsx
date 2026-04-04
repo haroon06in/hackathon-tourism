@@ -117,6 +117,7 @@ function OnboardingPage() {
           checkOut,
           guests: 1,
           preferences: { bedType: bedType as 'King' | 'Queen' | 'Single' | 'Double', smoking: false, viewPreference: 'None', specialRequests },
+          profileId: savedProfile?.id,
         });
       }
 
@@ -129,6 +130,7 @@ function OnboardingPage() {
             date: checkIn || today,
             timeSlot: act.timeSlots[0] || '',
             guests: 1,
+            profileId: savedProfile?.id,
           });
         }
       }

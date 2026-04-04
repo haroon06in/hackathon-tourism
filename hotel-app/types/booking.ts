@@ -7,6 +7,7 @@ export interface BookingRequest {
   checkOut: string;
   guests: number;
   preferences: Preferences;
+  profileId?: string;
 }
 
 export interface BookingResponse {

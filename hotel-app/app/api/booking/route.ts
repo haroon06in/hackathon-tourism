@@ -23,7 +23,7 @@ export async function POST(request: Request) {
     const { data, error } = await supabase
       .from('itinerary')
       .insert({
-        profile_id: null,
+        profile_id: body.profileId || null,
         type: 'hotel',
         hotel_id: body.hotelId,
         room_type_id: body.roomId,

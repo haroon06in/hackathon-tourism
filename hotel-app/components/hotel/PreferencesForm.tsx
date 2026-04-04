@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Preferences } from '../../types/hotel';
 import { BookingRequest } from '../../types/booking';
 import { useBooking } from '../../hooks/useBooking';
+import { useGuest } from '../../contexts/GuestContext';
 
 interface PreferencesFormProps {
   hotelId: string;
@@ -12,6 +13,7 @@ interface PreferencesFormProps {
 
 export function PreferencesForm({ hotelId, roomId, onSuccess, onCancel }: PreferencesFormProps) {
   const { bookHotel, isSubmitting, error, success } = useBooking();
+  const { guest } = useGuest();
   
   const [preferences, setPreferences] = useState<Preferences>({
     bedType: 'Queen',
@@ -32,7 +34,8 @@ export function PreferencesForm({ hotelId, roomId, onSuccess, onCancel }: Prefer
       hotelId,
       roomId,
       ...bookingDetails,
-      preferences
+      preferences,
+      profileId: guest?.id,
     };
 
     const isSuccess = await bookHotel(req);
