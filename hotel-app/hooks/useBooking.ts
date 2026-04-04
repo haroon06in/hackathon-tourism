@@ -2,18 +2,26 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { BookingRequest } from '../types/booking';
 import { ActivityBookingRequest } from '../types/activity';
 import { api } from '../lib/api';
+import { useToast } from '../components/ui/Toast';
 
 export function useBooking() {
   const queryClient = useQueryClient();
+  const { notify } = useToast();
 
   const hotelMutation = useMutation({
     mutationFn: api.submitBooking,
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['itinerary'] }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['itinerary'] });
+      notify('Hotel reservation confirmed!', 'success', 'hotel');
+    },
   });
 
   const activityMutation = useMutation({
     mutationFn: api.submitActivityBooking,
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['itinerary'] }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['itinerary'] });
+      notify('Activity booked successfully!', 'success', 'local_activity');
+    },
   });
 
   const bookHotel = async (data: BookingRequest) => {
