@@ -1,24 +1,28 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { useChat } from '../../hooks/useChat';
 import { useGuest } from '../../contexts/GuestContext';
+import { useCurrentBranch } from '../../hooks/useCurrentBranch';
 import { MessageBubble } from './MessageBubble';
 
 const QUICK_ACTIONS = [
   "Order Coffee",
   "Valet Request",
   "Dinner Reservation",
-  "Late Check-out"
+  "Late Check-out",
+  "What's for dinner?"
 ];
 
 export function ChatWindow() {
   const { guest } = useGuest();
+  const { branchSlug } = useCurrentBranch();
+
   const guestProfile = useMemo(() => guest ? {
     name: guest.full_name,
     persona: guest.persona || undefined,
     preferences: guest.preferences,
   } : undefined, [guest]);
 
-  const { messages, isTyping, sendMessage } = useChat({ guestProfile });
+  const { messages, isTyping, sendMessage } = useChat({ guestProfile, locationSlug: branchSlug || undefined });
   const [inputText, setInputText] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
